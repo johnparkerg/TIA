@@ -63,7 +63,7 @@ $black = imagecolorallocate($jpg_image, 0, 0, 0);
 // Set Path to Font File
 $font_path1 = random_pic('fonts/');
 $font_path2 = random_pic('fonts/');
-$font_path3 = random_pic('onts/');
+$font_path3 = random_pic('fonts/');
 
 // Insert a random number of piolines
 for ($x = 0; $x <= rand(1, 7); $x++) {
