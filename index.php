@@ -1,177 +1,197 @@
 <?php
-// GPT-3 connection
-$curl = curl_init();
-$theme = substr(urldecode($_GET["t"]),0,128);
+$rbd = $_GET["route"]=="/rbd";
+?>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-if($theme!=""){
-    $prompt = "Escribe, en español, un bonito y positivo mensaje de bendiciones y buenos deseos sobre ".$theme.". Escribe únicamente tres oraciones diferentes con una falta de ortografía:";
-}
-else{
-    $prompt = "Escribe, en español, un bonito y positivo mensaje de bendiciones y buenos deseos. Escribe únicamente tres oraciones diferentes con una falta de ortografía:";
-}
-if(isset($_GET["debug"])){
-    echo $theme."<br/>".$prompt;
-    die();
-}
-curl_setopt_array($curl, array(
-  CURLOPT_URL => 'https://api.openai.com/v1/completions',
-  CURLOPT_RETURNTRANSFER => true,
-  CURLOPT_ENCODING => '',
-  CURLOPT_MAXREDIRS => 10,
-  CURLOPT_TIMEOUT => 0,
-  CURLOPT_FOLLOWLOCATION => true,
-  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-  CURLOPT_CUSTOMREQUEST => 'POST',
-  CURLOPT_POSTFIELDS =>'{
-  "model": "text-davinci-002",
-  "prompt": "'.$prompt.'",
-  "temperature": 0.7,
-  "max_tokens": 256,
-  "top_p": 1,
-  "frequency_penalty": 0.69,
-  "presence_penalty": 0.38
-}',
-  CURLOPT_HTTPHEADER => array(
-    'Content-Type: application/json',
-    'Authorization: Bearer '.$_ENV["OPENAI_API_KEY"]
-  ),
-));
-
-$response = curl_exec($curl);
-
-curl_close($curl);
-$str = json_decode($response,true)["choices"][0]["text"];
-$sentences = preg_split('/(?<=[.?!])\s+(?=[a-z])/i', $str);
-
-
-//General Vars
-$site = "www.DeseosPositivos.com";
-
-//Set the Content Type
-header('Content-type: image/jpeg');
-
-// Create Image From Existing File and loag a generic background from bg
-//$jpg_image = imagecreatefromjpeg('bg/'.$fondos[array_rand($fondos,1)]->fondo);
-//$jpg_image = imagecreatefromjpeg(random_pic());
-$jpg_image = resize_image(random_pic(),512,512,true);
-
-// Allocate A Color For The Text
-$white = imagecolorallocate($jpg_image, 255, 255, 255);
-$red = imagecolorallocate($jpg_image, 255, 0, 0);
-$black = imagecolorallocate($jpg_image, 0, 0, 0);
-
-// Set Path to Font File
-$font_path1 = random_pic('fonts/');
-$font_path2 = random_pic('fonts/');
-$font_path3 = random_pic('fonts/');
-
-// Insert a random number of piolines
-for ($x = 0; $x <= rand(1, 7); $x++) {
-    $asset = random_pic('img/');
-    list($newwidth, $newheight) = getimagesize($asset);
-    $asset = imagecreatefrompng($asset);
-    //$asset = resize_png($asset,64,64*$newheight/$newwidth,false);
-    imagecopyresampled($jpg_image, $asset, rand(0,448), rand(0,448), 0, 0, 64,64*$newheight/$newwidth,$newwidth,$newheight);
-}
-
-// Set Text to Be Printed On Image
-$saludo = wordwrap($sentences[0], 25, "\n");
-$mensaje = wordwrap($sentences[1], 20, "\n");
-$bendicion = wordwrap($sentences[2], 25, "\n");
-
-$color1_raw = $colores[array_rand($colores,1)];
-$color1 = imagecolorallocate($jpg_image, $color1_raw->r, $color1_raw->g, $color1_raw->b);
-$color1_inv = imagecolorallocate($jpg_image, abs(255-$color1_raw->r), abs(255-$color1_raw->g), abs(255-$color1_raw->b));
-$color2_raw = $colores[array_rand($colores,1)];
-$color2 = imagecolorallocate($jpg_image, $color2_raw->r, $color2_raw->g, $color2_raw->b);
-$color2_inv = imagecolorallocate($jpg_image, abs(255-$color2_raw->r), abs(255-$color2_raw->g), abs(255-$color2_raw->b));
-$color3_raw = $colores[array_rand($colores,1)];
-$color3 = imagecolorallocate($jpg_image, $color3_raw->r, $color3_raw->g, $color3_raw->b);
-$color3_inv = imagecolorallocate($jpg_image, abs(255-$color3_raw->r), abs(255-$color3_raw->g), abs(255-$color3_raw->b));
-
-// Print Text On Image
-imagettfstroketext($jpg_image, 18, 0, 75, 50, $color1, $color1_inv, $font_path1, $saludo, 2);
-imagettfstroketext($jpg_image, 30, 0, 50, 200, $color2, $color2_inv, $font_path2, $mensaje, 2);
-imagettfstroketext($jpg_image, 18, 0, 125, 400, $color3, $color3_inv, $font_path3, $bendicion, 2);
-
-
-$dimensions = imagettfbbox(20, 0, $font_path, $site);
-$textWidth = abs($dimensions[4] - $dimensions[0]);
-$x = imagesx($jpg_image) - $textWidth;
-$y = imagesy($jpg_image) - 20;
-imagettfstroketext($jpg_image, 20, 0, $x-10, $y, $white, $black, $font_path, $site, 2);
-
-// Send Image to Browser
-
-imagejpeg($jpg_image);
-
-// Clear Memory
-imagedestroy($jpg_image);
-
-function imagettfstroketext(&$image, $size, $angle, $x, $y, &$textcolor, &$strokecolor, $fontfile, $text, $px) {
-    for($c1 = ($x-abs($px)); $c1 <= ($x+abs($px)); $c1++)
-        for($c2 = ($y-abs($px)); $c2 <= ($y+abs($px)); $c2++)
-            $bg = imagettftext($image, $size, $angle, $c1, $c2, $strokecolor, $fontfile, $text);
-   return imagettftext($image, $size, $angle, $x, $y, $textcolor, $fontfile, $text);
-}
-
-function random_pic($dir = 'bg')
-{
-    $files = glob($dir . '/*.*');
-    $file = array_rand($files);
-    return $files[$file];
-}
-
-function resize_image($file, $w, $h, $crop=FALSE) {
-    list($width, $height) = getimagesize($file);
-    $r = $width / $height;
-    if ($crop) {
-        if ($width > $height) {
-            $width = ceil($width-($width*abs($r-$w/$h)));
-        } else {
-            $height = ceil($height-($height*abs($r-$w/$h)));
+    <title>DeseosPositivos.com</title>
+    <!-- The following loads latest bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
+    <style>
+        @media (min-width: 512px) {
+            .container {
+                width: 512px;
+            }
         }
-        $newwidth = $w;
-        $newheight = $h;
-    } else {
-        if ($w/$h > $r) {
-            $newwidth = $h*$r;
-            $newheight = $h;
-        } else {
-            $newheight = $w/$r;
-            $newwidth = $w;
-        }
-    }
-    $src = imagecreatefromjpeg($file);
-    $dst = imagecreatetruecolor($newwidth, $newheight);
-    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newwidth, $newheight, $width, $height);
 
-    return $dst;
-}
-function resize_png($file, $w, $h, $crop=FALSE) {
-    list($width, $height) = getimagesize($file);
-    $r = $width / $height;
-    if ($crop) {
-        if ($width > $height) {
-            $width = ceil($width-($width*abs($r-$w/$h)));
-        } else {
-            $height = ceil($height-($height*abs($r-$w/$h)));
+        div#imageHolder {
+            padding: 0;
+            margin: 0;
         }
-        $newwidth = $w;
-        $newheight = $h;
-    } else {
-        if ($w/$h > $r) {
-            $newwidth = $h*$r;
-            $newheight = $h;
-        } else {
-            $newheight = $w/$r;
-            $newwidth = $w;
+
+        body.keyboard {
+            height: calc(100% + 500px);
+            /* add padding for keyboard */
         }
-    }
-    $src = imagecreatefrompng($file);
-    $dst = imagecreatetruecolor($newwidth, $newheight);
-    imagealphablending( $dst, false );
-    imagesavealpha( $dst, true );
-    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newwidth, $newwidth*$r, $width, $height);
-    return $dst;
-}
+
+        input {
+            font-size: 16px !important;
+        }
+    </style>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=<?=$_ENV["GTAGID"]?>"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', '<?=$_ENV["GTAGID"]?>');
+    </script>
+</head>
+
+<body>
+    <!-- A very beautiful bootstrap mobile friendly landing page with a logo, an image, a text input and a button. All stacked on top of each other. -->
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1>DeseosPositivos<span class="text-muted">.com</span></h1>
+            </div>
+            <div class="col-4 text-center">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="customSwitch1">
+                    <label class="custom-control-label" for="customSwitch1">Borracho</label>
+                </div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="customSwitch2">
+                    <label class="custom-control-label" for="customSwitch2">Nalgas</label>
+                </div>
+            </div>
+            <div class="col-4 text-center">
+                <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="customSwitch3" <?php if($rbd) { echo "checked=checked"; } ?>>
+                    <label class="custom-control-label" for="customSwitch3"><?php if($rbd) { echo "RBD"; } else { echo "Chayanne"; } ?></label>
+                </div>
+            </div>
+            <!-- This next col-12 has a full width agressiveness slider that goes from 0 to 100 -->
+            <div class="col-12 border-top m-3"></div>
+            <div class="col-10 text-center">
+                <label for="customRange1">Agresividad</label>
+                <input type="range" class="custom-range" min="0" max="100" id="customRange1">
+            </div>
+            <div class="col-2 text-center d-flex">
+                <!-- Random Generator -->
+                <button type="button" class="btn btn-secondary w-100 p-2" id="random">
+                    <!-- shuffle icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-shuffle" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.126 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.317 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.126-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.317-1.918C4.172 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5"/>
+  <path d="M13 5.466V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192m0 9v-3.932a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192"/>
+</svg>
+            </div>
+            <!--div class="col-12 text-center">
+                <input type="range" class="custom-range" min="0" max="100" id="customRange2">
+                <label for="customRange2">Poesía</label>
+            </div-->
+            <div class="col-12 text-center">
+                <div class="col-12" id="imageHolder">
+                    <img class="img-responsive d-none" alt="Image" id="image">
+                </div>
+                <div class="spinner-border d-none" role="status" id="loader">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+            <!-- This next col-12 has a share button that shares the image with id image>
+            <div class="col-12 text-center">
+                <button type="button" class="btn btn-secondary w-100 p-2" id="share">Compartir</button>
+            </div-->
+        </div>
+        <div class="row fixed-bottom">
+            <div class="col-12 text-center">
+                <input type="text" class="form-control" placeholder="Enter text" id="text" onfocus="this.select();"
+                    onmouseup="return false;">
+            </div>
+            <div class="col-12 text-right">
+                <button type="button" class="btn btn-primary w-100 p-5" id="generate">Generar</button>
+            </div>
+            <script>
+                // Random button function
+                var random = document.getElementById("random");
+                random.onclick = function () {
+                    //Set customSwitch1, customSwitch2, customSwitch3 and customRange1 to random values
+                    document.getElementById("customSwitch1").checked = Math.random() >= 0.5;
+                    document.getElementById("customSwitch2").checked = Math.random() >= 0.5;
+                    document.getElementById("customSwitch3").checked = Math.random() >= 0.5;
+                    document.getElementById("customRange1").value = Math.floor(Math.random() * 101);
+                }
+                // Get the button
+                var generate = document.getElementById("generate");
+                // a function that will be called when the button is clicked and will show a loader on top of the image and then fetch an image from an endpoint and replace the image with the new image
+                generate.onclick = function () {
+                    // remove d-none class from loader
+
+                    var oldImage = document.getElementById("image");
+                    oldImage.parentNode.removeChild(oldImage);
+                    var loader = document.getElementById("loader");
+                    loader.classList.remove("d-none");
+                    // fetch image
+                    var image = document.createElement("img");
+                    //Get the text from the input and url encode it into a variable
+                    var text = document.getElementById("text").value;
+                    var encoded = encodeURIComponent(text);
+                    var url = "generator.php?t=" + encoded + "&id=" + makeid(5);
+                    // Add drunk = true and aggressiveness = x to the url according to the switch and slider
+                    url += "&drunk=" + document.getElementById("customSwitch1").checked;
+                    url += "&aggressiveness=" + document.getElementById("customRange1").value;
+                    url += "&nalgas=" + document.getElementById("customSwitch2").checked;
+                    url += "&chayanne=" + document.getElementById("customSwitch3").checked;
+                    //url += "&poetry=" + document.getElementById("customRange2").value;
+                    <?php if($rbd) { ?> url += "&rbd=true"; <?php } ?>
+                    url += "&base64=true";
+                    // Get url and fetch the image in base 64 with AllowOriginHeader
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function (data) {
+                            image.src = data.image;
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.error('Error loading image:', errorThrown);
+                        }
+                    });
+                    image.className = "img-responsive";
+                    image.className = "w-100";
+                    image.id = "image";
+                    image.onload = function () {
+                        // add d-none class to loader
+                        loader.classList.add("d-none");
+                        // replace image
+                        var imageHolder = document.getElementById("imageHolder");
+                        imageHolder.append(image);
+                    }
+                    this.blur();
+                }
+
+                function makeid(length) {
+                    let result = '';
+                    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                    const charactersLength = characters.length;
+                    let counter = 0;
+                    while (counter < length) {
+                        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                        counter += 1;
+                    }
+                    return result;
+                }
+                // focus events don't bubble, must use capture phase
+                document.body.addEventListener("focus", event => {
+                    const target = event.target;
+                    switch (target.tagName) {
+                        case "INPUT":
+                        case "TEXTAREA":
+                        case "SELECT":
+                            document.body.classList.add("keyboard");
+                    }
+                }, true);
+                document.body.addEventListener("blur", () => {
+                    document.body.classList.remove("keyboard");
+                }, true); 
+            </script>
+</body>
+
+</html>

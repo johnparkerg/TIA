@@ -11,8 +11,22 @@ TIA es una Tía de Inteligencia Artificial que genera memes con Piolines y frase
 - Add bg folder with backgrounds
 - Add fonts folder with web safe fonts
 - Add img folder with transparent pngs of piolines
+- Add chayanne folder with transparent pngs of chayanne
+- Add rbd/bg with square rbd backgrounds
+- Add rbd/item with transparent pngs of rbd
 
-## Usage
+### .htaccess
+```
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^/?(.*)$ /index.php?route=/$1 [L,QSA]
+```
 
-- Load index.php in a browswer
-- Add a t variable in the url (index.php?t=Message) to customize the Meme
+## Changelog
+
+v14.2.1
+
+- Replaced OpenAI for OpenRouter to increase model availability
+- Added function to check if text is overlapping
+- 
